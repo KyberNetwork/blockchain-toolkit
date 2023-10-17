@@ -33,3 +33,31 @@ func WDiv(x *big.Int, y *big.Int) *big.Int {
 		y,
 	)
 }
+
+// ToWad
+// Convert x to WAD (18 decimals) from d decimals.
+func ToWAD(x *big.Int, d uint8) *big.Int {
+	if d < 18 {
+		return new(big.Int).Mul(x, integer.TenPow(18-d))
+	}
+
+	if d > 18 {
+		return new(big.Int).Div(x, integer.TenPow(d-18))
+	}
+
+	return new(big.Int).Set(x)
+}
+
+// FromWAD
+// Convert x from WAD (18 decimals) to d decimals.
+func FromWAD(x *big.Int, d uint8) *big.Int {
+	if d < 18 {
+		return new(big.Int).Div(x, integer.TenPow(18-d))
+	}
+
+	if d > 18 {
+		return new(big.Int).Mul(x, integer.TenPow(d-18))
+	}
+
+	return new(big.Int).Set(x)
+}
