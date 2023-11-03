@@ -1,7 +1,11 @@
-package dsmath
+package openzeppelin
 
 import "math/big"
 
+/**
+ * This formula follows implementation from openzeppelin
+ * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/94697be8a3f0dfcd95dfb13ffbd39b5973f5c65d/contracts/utils/math/Math.sol#L221
+ **/
 func Sqrt(value *big.Int) *big.Int {
 	if value.Cmp(big.NewInt(0)) == 0 {
 		return value
