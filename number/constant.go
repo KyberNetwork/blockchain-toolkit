@@ -1,6 +1,10 @@
 package number
 
-import "github.com/holiman/uint256"
+import (
+	"errors"
+
+	"github.com/holiman/uint256"
+)
 
 var (
 	Zero      = uint256.NewInt(0)
@@ -20,4 +24,11 @@ var (
 	Number_10000 = uint256.NewInt(10000)
 
 	Number_1e18 = new(uint256.Int).Exp(Number_10, Number_18)
+
+	MaxU256 = uint256.MustFromHex("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+)
+
+var (
+	ErrOverflow  = errors.New("uint256 overflow")
+	ErrUnderflow = errors.New("uint256 underflow")
 )

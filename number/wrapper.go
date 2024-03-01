@@ -62,6 +62,13 @@ func Mul(x, y *uint256.Int) *uint256.Int {
 	res.Mul(x, y)
 	return &res
 }
+func SafeMul(x, y *uint256.Int) *uint256.Int {
+	var res uint256.Int
+	if _, overflow := res.MulOverflow(x, y); overflow {
+		panic(ErrOverflow)
+	}
+	return &res
+}
 
 func Div(x, y *uint256.Int) *uint256.Int {
 	var res uint256.Int
@@ -95,21 +102,37 @@ func SetFromBig(x *big.Int) *uint256.Int {
 // so we need to force by go:noinline directive
 
 //go:noinline
-func _add(x, y, z *uint256.Int) {
-	z.Add(x, y)
+func _add(x, y, z *uint256.Int) bool {
+	_, overflow := z.AddOverflow(x, y)
+	return overflow
 }
 func Add(x, y *uint256.Int) *uint256.Int {
 	var res uint256.Int
 	_add(x, y, &res)
 	return &res
 }
+func SafeAdd(x, y *uint256.Int) *uint256.Int {
+	var res uint256.Int
+	if _add(x, y, &res) {
+		panic(ErrOverflow)
+	}
+	return &res
+}
 
 //go:noinline
-func _sub(x, y, z *uint256.Int) {
-	z.Sub(x, y)
+func _sub(x, y, z *uint256.Int) bool {
+	_, underflow := z.SubOverflow(x, y)
+	return underflow
 }
 func Sub(x, y *uint256.Int) *uint256.Int {
 	var res uint256.Int
 	_sub(x, y, &res)
+	return &res
+}
+func SafeSub(x, y *uint256.Int) *uint256.Int {
+	var res uint256.Int
+	if _sub(x, y, &res) {
+		panic(ErrUnderflow)
+	}
 	return &res
 }
