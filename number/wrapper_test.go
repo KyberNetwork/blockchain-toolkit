@@ -44,6 +44,114 @@ func TestWrapper(t *testing.T) {
 			assert.Equal(t, new(uint256.Int).Sub(&x1, &y1), number.Sub(&x1, &y1))
 			assert.Equal(t, new(uint256.Int).Mul(&x1, &y1), number.Mul(&x1, &y1))
 			assert.Equal(t, new(uint256.Int).Div(&x1, &y1), number.Div(&x1, &y1))
+
+			// from univ3 safeadd: `require((z = x + y) >= x);`
+			if number.Add(&x1, &y1).Cmp(&x1) >= 0 {
+				assert.Equal(t, new(uint256.Int).Add(&x1, &y1), number.SafeAdd(&x1, &y1))
+			} else {
+				assert.PanicsWithError(t, number.ErrOverflow.Error(), func() {
+					number.SafeAdd(&x1, &y1)
+				})
+			}
+
+			// from univ3 safesub: `require((z = x - y) <= x);`
+			if number.Sub(&x1, &y1).Cmp(&x1) <= 0 {
+				assert.Equal(t, new(uint256.Int).Sub(&x1, &y1), number.SafeSub(&x1, &y1))
+			} else {
+				assert.PanicsWithError(t, number.ErrUnderflow.Error(), func() {
+					number.SafeSub(&x1, &y1)
+				})
+			}
+
+			// from univ3 safemul: `require(x == 0 || (z = x * y) / x == y);`
+			if x1.IsZero() || number.Div(number.Mul(&x1, &y1), &x1).Cmp(&y1) == 0 {
+				assert.Equal(t, new(uint256.Int).Mul(&x1, &y1), number.SafeMul(&x1, &y1))
+			} else {
+				assert.PanicsWithError(t, number.ErrOverflow.Error(), func() {
+					number.SafeMul(&x1, &y1)
+				})
+			}
+		})
+	}
+}
+
+func TestSafeAdd(t *testing.T) {
+	for _, tc := range []struct {
+		x             *uint256.Int
+		y             *uint256.Int
+		errorOrResult interface{}
+	}{
+		{number.MaxU256, number.Number_1, number.ErrOverflow},
+		{number.MaxU256, number.Number_2, number.ErrOverflow},
+		{number.SubUint64(number.MaxU256, 1), number.Number_2, number.ErrOverflow},
+		{number.SubUint64(number.MaxU256, 1), number.Number_1, number.MaxU256},
+		{number.Number_1, number.Number_2, number.Number_3},
+	} {
+		t.Run(fmt.Sprintf("test %v %v", tc.x, tc.y), func(t *testing.T) {
+			if err, ok := tc.errorOrResult.(error); ok {
+				assert.PanicsWithError(t, err.Error(), func() {
+					number.SafeAdd(tc.x, tc.y)
+				})
+				assert.False(t, number.Add(tc.x, tc.y).Cmp(tc.x) >= 0)
+			} else {
+				assert.True(t, number.Add(tc.x, tc.y).Cmp(tc.x) >= 0)
+				assert.Equal(t, tc.errorOrResult, number.SafeAdd(tc.x, tc.y))
+			}
+		})
+	}
+}
+
+func TestSafeSub(t *testing.T) {
+	for _, tc := range []struct {
+		x             *uint256.Int
+		y             *uint256.Int
+		errorOrResult interface{}
+	}{
+		{number.MaxU256, number.Number_1, number.SubUint64(number.MaxU256, 1)},
+		{number.MaxU256, number.Number_2, number.SubUint64(number.MaxU256, 2)},
+		{number.Number_1, number.Number_2, number.ErrUnderflow},
+		{uint256.NewInt(0), number.Number_1, number.ErrUnderflow},
+		{number.Number_1, number.MaxU256, number.ErrUnderflow},
+		{uint256.NewInt(0), number.MaxU256, number.ErrUnderflow},
+		{number.SubUint64(number.MaxU256, 1), number.MaxU256, number.ErrUnderflow},
+	} {
+		t.Run(fmt.Sprintf("test %v %v", tc.x, tc.y), func(t *testing.T) {
+			if err, ok := tc.errorOrResult.(error); ok {
+				assert.PanicsWithError(t, err.Error(), func() {
+					number.SafeSub(tc.x, tc.y)
+				})
+				assert.False(t, number.Sub(tc.x, tc.y).Cmp(tc.x) <= 0)
+			} else {
+				assert.True(t, number.Sub(tc.x, tc.y).Cmp(tc.x) <= 0)
+				assert.Equal(t, tc.errorOrResult, number.SafeSub(tc.x, tc.y))
+			}
+		})
+	}
+}
+
+func TestSafeMul(t *testing.T) {
+	for _, tc := range []struct {
+		x             *uint256.Int
+		y             *uint256.Int
+		errorOrResult interface{}
+	}{
+		{number.MaxU256, uint256.NewInt(0), uint256.NewInt(0)},
+		{number.MaxU256, number.Number_1, number.MaxU256},
+		{number.MaxU256, number.Number_2, number.ErrOverflow},
+		{number.Div(number.MaxU256, number.Number_2), number.Number_2, number.SubUint64(number.MaxU256, 1)},
+		{number.AddUint64(number.Div(number.MaxU256, number.Number_2), 1), number.Number_2, number.ErrOverflow},
+		{number.Number_1, number.Number_2, number.Number_2},
+	} {
+		t.Run(fmt.Sprintf("test %v %v", tc.x, tc.y), func(t *testing.T) {
+			if err, ok := tc.errorOrResult.(error); ok {
+				assert.PanicsWithError(t, err.Error(), func() {
+					number.SafeMul(tc.x, tc.y)
+				})
+				assert.False(t, tc.x.IsZero() || number.Div(number.Mul(tc.x, tc.y), tc.x).Cmp(tc.y) == 0)
+			} else {
+				assert.True(t, tc.x.IsZero() || number.Div(number.Mul(tc.x, tc.y), tc.x).Cmp(tc.y) == 0)
+				assert.Equal(t, tc.errorOrResult, number.SafeMul(tc.x, tc.y))
+			}
 		})
 	}
 }
@@ -56,7 +164,13 @@ func SampleUsage(x, y *uint256.Int) bool {
 		),
 		number.Sub(
 			number.SubUint64(x, 1),
-			number.Set(y),
+			number.SafeAdd(
+				number.Set(y),
+				number.SafeSub(
+					x,
+					number.SafeMul(number.SetUint64(11), y),
+				),
+			),
 		),
 	)
 	return res.IsZero()
