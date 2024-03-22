@@ -69,16 +69,27 @@ func SafeMul(x, y *uint256.Int) *uint256.Int {
 	}
 	return &res
 }
-func SafeMulZ(x, y, z *uint256.Int) {
+func SafeMulZ(x, y, z *uint256.Int) *uint256.Int {
 	if _, overflow := z.MulOverflow(x, y); overflow {
 		panic(ErrOverflow)
 	}
+	return z
 }
 
 func Div(x, y *uint256.Int) *uint256.Int {
 	var res uint256.Int
 	res.Div(x, y)
 	return &res
+}
+func SafeDiv(x, y *uint256.Int) *uint256.Int {
+	var res uint256.Int
+	return SafeDivZ(x, y, &res)
+}
+func SafeDivZ(x, y, z *uint256.Int) *uint256.Int {
+	if y.IsZero() {
+		panic(ErrDivByZero)
+	}
+	return z.Div(x, y)
 }
 
 func SetUint64(x uint64) *uint256.Int {
@@ -123,10 +134,11 @@ func SafeAdd(x, y *uint256.Int) *uint256.Int {
 	}
 	return &res
 }
-func SafeAddZ(x, y, z *uint256.Int) {
+func SafeAddZ(x, y, z *uint256.Int) *uint256.Int {
 	if _, overflow := z.AddOverflow(x, y); overflow {
 		panic(ErrOverflow)
 	}
+	return z
 }
 
 //go:noinline
@@ -146,10 +158,11 @@ func SafeSub(x, y *uint256.Int) *uint256.Int {
 	}
 	return &res
 }
-func SafeSubZ(x, y, z *uint256.Int) {
+func SafeSubZ(x, y, z *uint256.Int) *uint256.Int {
 	if _, underflow := z.SubOverflow(x, y); underflow {
 		panic(ErrUnderflow)
 	}
+	return z
 }
 
 func WithinDelta(x, y *uint256.Int, delta uint64) bool {
