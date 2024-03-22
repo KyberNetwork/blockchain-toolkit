@@ -3,6 +3,7 @@ module github.com/KyberNetwork/blockchain-toolkit
 go 1.21
 
 require (
+	github.com/KyberNetwork/int256 v0.1.4
 	github.com/ethereum/go-ethereum v1.13.9
 	github.com/holiman/uint256 v1.2.4
 	github.com/stretchr/testify v1.8.4

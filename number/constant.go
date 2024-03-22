@@ -31,4 +31,5 @@ var (
 var (
 	ErrOverflow  = errors.New("uint256 overflow")
 	ErrUnderflow = errors.New("uint256 underflow")
+	ErrDivByZero = errors.New("divide by zero")
 )

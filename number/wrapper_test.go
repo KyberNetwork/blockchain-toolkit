@@ -165,9 +165,12 @@ func SampleUsage(x, y *uint256.Int) bool {
 		number.Sub(
 			number.SubUint64(x, 1),
 			number.SafeAdd(
-				number.Set(y),
+				number.Div(
+					number.Set(y),
+					number.SafeDivZ(y, number.SetUint64(10), &uint256.Int{}),
+				),
 				number.SafeSub(
-					x,
+					number.SafeDiv(x, number.SetUint64(10)),
 					number.SafeMul(number.SetUint64(11), y),
 				),
 			),
