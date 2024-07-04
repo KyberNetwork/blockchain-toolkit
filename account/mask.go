@@ -21,7 +21,7 @@ func MaskAddress(address string, numVisibleChars int, maskedCharacter rune) (str
 		return "", ErrInvalidAddress
 	}
 
-	if numVisibleChars%2 != 0 {
+	if numVisibleChars%2 != 0 || numVisibleChars <= 0 {
 		return "", ErrInvalidNumVisibleChars
 	}
 

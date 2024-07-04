@@ -49,6 +49,16 @@ func TestMaskAddress(t *testing.T) {
 			wantErr: ErrInvalidNumVisibleChars,
 		},
 		{
+			name: "invalid number of visible characters",
+			args: args{
+				address:         "0x1234567890abcdef1234567890abcdef12345678",
+				numVisibleChars: -1,
+				maskedCharacter: 'x',
+			},
+			want:    "",
+			wantErr: ErrInvalidNumVisibleChars,
+		},
+		{
 			name: "invalid number of masked characters",
 			args: args{
 				address:         "0x1234567890abcdef1234567890abcdef12345678",
