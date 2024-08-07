@@ -34,23 +34,35 @@ func (c *client) BlockNumber(ctx context.Context) (uint64, error) {
 
 func (c *client) HeaderByNumber(ctx context.Context, number *big.Int) (Header, error) {
 	header, err := c.client.HeaderByNumber(ctx, number)
-	return convertHeader(header), err
+	if err != nil {
+		return Header{}, err
+	}
+
+	return convertHeader(header)
 }
 
 func (c *client) HeaderByHash(ctx context.Context, hash common.Hash) (Header, error) {
 	header, err := c.client.HeaderByHash(ctx, hash)
-	return convertHeader(header), err
+	if err != nil {
+		return Header{}, err
+	}
+
+	return convertHeader(header)
 }
 
 func (c *client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	return c.client.FilterLogs(ctx, q)
 }
 
-func convertHeader(header *types.Header) Header {
+func convertHeader(header *types.Header) (Header, error) {
+	if header == nil {
+		return Header{}, ethereum.NotFound
+	}
+
 	return Header{
 		Hash:       header.Hash(),
 		ParentHash: header.ParentHash,
 		Number:     header.Number,
 		Time:       header.Time,
-	}
+	}, nil
 }
