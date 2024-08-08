@@ -46,12 +46,20 @@ func (c *client) BlockNumber(ctx context.Context) (uint64, error) {
 
 func (c *client) HeaderByNumber(ctx context.Context, number *big.Int) (evmclient.Header, error) {
 	header, err := c.avaxClient.HeaderByNumber(ctx, number)
-	return convertAvaxHeader(header), err
+	if err != nil {
+		return evmclient.Header{}, err
+	}
+
+	return convertAvaxHeader(header)
 }
 
 func (c *client) HeaderByHash(ctx context.Context, hash common.Hash) (evmclient.Header, error) {
 	header, err := c.avaxClient.HeaderByHash(ctx, hash)
-	return convertAvaxHeader(header), err
+	if err != nil {
+		return evmclient.Header{}, err
+	}
+
+	return convertAvaxHeader(header)
 }
 
 func (c *client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
@@ -71,12 +79,16 @@ func (c *client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]type
 	return evmLogs, nil
 }
 
-func convertAvaxHeader(header *avaxtypes.Header) evmclient.Header {
+func convertAvaxHeader(header *avaxtypes.Header) (evmclient.Header, error) {
+	if header == nil {
+		return evmclient.Header{}, ethereum.NotFound
+	}
+
 	// Only convert fields that we use.
 	return evmclient.Header{
 		Hash:       header.Hash(),
 		ParentHash: header.ParentHash,
 		Number:     header.Number,
 		Time:       header.Time,
-	}
+	}, nil
 }
